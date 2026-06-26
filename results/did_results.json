@@ -1,0 +1,62 @@
+{
+  "treatment_date": "2025-01-05",
+  "window": [
+    "2024-01-01",
+    "2026-04-30"
+  ],
+  "headline": {
+    "spec": "headline_cbd_bound_vs_manhattan",
+    "coef": 0.009357882974811334,
+    "se": 0.01508779146364868,
+    "pvalue": 0.5351071551603107,
+    "n_obs": 1702,
+    "pct_change": 0.9401804860077362,
+    "ci_low_pct": -2.001125129230418,
+    "ci_high_pct": 3.969765469081897
+  },
+  "cost": {
+    "spec": "cost_per_trip_usd",
+    "coef": -0.02894553199184971,
+    "se": 0.13236737916841762,
+    "pvalue": 0.8269026635944307,
+    "n_obs": 1702,
+    "usd": -0.02894553199184971,
+    "ci_low": -0.2883855951619483,
+    "ci_high": 0.23049453117824883
+  },
+  "toll": {
+    "spec": "avg_cbd_toll_post_period_usd",
+    "avg_cbd_fee_cbd_bound": 0.740062874832967
+  },
+  "parallel_trends": {
+    "spec": "parallel_trends_preperiod",
+    "interaction_coef_per_day": 0.0001954535686878794,
+    "se": 0.00011858175715897413,
+    "pvalue": 0.09929932635784507,
+    "passes_at_5pct": true
+  },
+  "zone_fe_manhattan": {
+    "spec": "zone_twfe_manhattan_cluster_unit",
+    "coef": 0.010587759746854641,
+    "se": 0.020928143413228576,
+    "pvalue": 0.6129197408983338,
+    "n_obs": 55725,
+    "pct_change": 1.0644008415603476,
+    "ci_low_pct": -2.9973027667617367,
+    "ci_high_pct": 5.296176382647244,
+    "n_zones": 66,
+    "n_clusters": 66
+  },
+  "zone_fe_allnyc": {
+    "spec": "zone_twfe_allnyc_cluster_borough",
+    "coef": -0.03962751531680488,
+    "se": 0.05978836420350612,
+    "pvalue": 0.5074609300111934,
+    "n_obs": 193995,
+    "pct_change": -3.885261483725237,
+    "ci_low_pct": -14.513584794596182,
+    "ci_high_pct": 8.06445606421815,
+    "n_zones": 231,
+    "n_clusters": 6
+  }
+}

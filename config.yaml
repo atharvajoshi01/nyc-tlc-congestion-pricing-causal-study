@@ -1,0 +1,36 @@
+# Configuration for the NYC congestion-pricing causal study.
+# Everything downstream (SQL, panel build, regressions, figures) reads from here
+# so the study is fully parameterised and reproducible.
+
+study:
+  # Congestion pricing went live in the Manhattan Congestion Relief Zone on this date.
+  treatment_date: "2025-01-05"
+  # Panel window. end_month: "auto" makes the pipeline discover the latest TLC
+  # release at run time, so re-running keeps the study current ("live").
+  start_month: "2024-01"
+  end_month: "auto"
+
+data:
+  cloudfront_base: "https://d37ci6vzurychx.cloudfront.net/trip-data"
+  zone_lookup_url: "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+  raw_dir: "data/raw"
+  # Services to include in the pooled panel. yellow + green are the canonical
+  # street-hail taxi series and are downloaded in full. fhvhv (Uber/Lyft) is
+  # supported by the same code path but is multi-GB/month; enable if you have
+  # the bandwidth/disk.
+  services: ["yellow", "green"]
+
+crz:
+  # The Congestion Relief Zone is derived from data, not hand-listed: any pickup
+  # zone where at least `fee_threshold` of trips incur the cbd_congestion_fee in
+  # the reference month is inside the CRZ. See src/zones.py.
+  reference_month: "2025-02"
+  fee_threshold: 0.80
+  derived_file: "data/crz_zones.csv"
+
+model:
+  # Outcome is log(daily trips) so DiD coefficients read as approximate % changes.
+  cluster_var: "borough"
+  # Event-study reference period (month index relative to treatment; -1 = the
+  # month just before rollout, the omitted baseline).
+  event_reference: -1

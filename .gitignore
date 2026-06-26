@@ -1,0 +1,8 @@
+# Raw TLC parquet (1.8 GB) -- re-fetched by `make data`. Derived panels are committed.
+data/raw/
+data/_shp/
+.venv*/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store

@@ -1,0 +1,42 @@
+{
+  "placebo_dates": [
+    {
+      "placebo_date": "2024-05-01",
+      "pct_change": 7.203685941905285,
+      "pvalue": 0.0003981181716190071
+    },
+    {
+      "placebo_date": "2024-07-01",
+      "pct_change": 5.988182729564957,
+      "pvalue": 0.006823693702785587
+    },
+    {
+      "placebo_date": "2024-09-01",
+      "pct_change": -1.8535802766743472,
+      "pvalue": 0.46475338919607867
+    }
+  ],
+  "alternate_controls": [
+    {
+      "control_def": "adjacent_manhattan",
+      "pct_change": 1.0644008415603476,
+      "pvalue": 0.6129197408983338,
+      "n_zones": 66
+    },
+    {
+      "control_def": "all_nyc_outer",
+      "pct_change": -3.885261483725237,
+      "pvalue": 0.5074609300111934,
+      "n_zones": 231
+    }
+  ],
+  "permutation_test": {
+    "spec": "permutation_zone_assignment",
+    "actual_coef": 0.010587759746854641,
+    "actual_pct": 1.0644008415603476,
+    "n_draws": 500,
+    "null_mean_pct": 1.2836090009772056,
+    "null_sd": 0.021320428847408354,
+    "perm_pvalue": 0.682
+  }
+}
