@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NYC Congestion Pricing: Did It Cut Manhattan Taxi Demand?</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --treat: #1F4E79;
+    --control: #808080;
+    --accent: #E63946;
+    --bg: #FAFBFC;
+    --card: #FFFFFF;
+    --border: #E1E4E8;
+    --text: #1C2733;
+    --muted: #6A737D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    background: var(--treat);
+    color: white;
+    padding: 28px 36px 24px;
+  }
+  header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+  header p { margin: 6px 0 0; font-size: 15px; opacity: 0.9; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px 36px 48px; }
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .kpi-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: var(--text); margin-top: 4px; }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi.headline { background: #FFF8F8; border-color: var(--accent); }
+  .kpi.headline .kpi-value { color: var(--accent); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .card h2 { margin: 0 0 14px; font-size: 17px; font-weight: 600; }
+  .card p.small { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .methodology {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .methodology h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+  .methodology p { margin: 0; font-size: 14px; }
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  footer a { color: var(--treat); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  #loading { text-align: center; padding: 60px; color: var(--muted); }
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .methodology { grid-template-columns: 1fr; }
+    .container { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Did NYC's Congestion Pricing Actually Cut Manhattan Taxi Demand?</h1>
+  <p>A difference-in-differences study of 95M+ TLC trips, January 2024 – December 2025</p>
+</header>
+
+<div class="container">
+
+  <div id="loading">Loading data…</div>
+
+  <div id="dashboard" style="display:none;">
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Trips Analyzed</div>
+        <div class="kpi-value" id="kpi-trips">—</div>
+        <div class="kpi-sub">CBD-bound + Manhattan control</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Toll Effective</div>
+        <div class="kpi-value">Jan 5, 2025</div>
+        <div class="kpi-sub">~$0.74 per metered trip</div>
+      </div>
+      <div class="kpi headline">
+        <div class="kpi-label">DiD Estimate</div>
+        <div class="kpi-value">+0.9%</div>
+        <div class="kpi-sub">95% CI: −2.0% to +4.0%</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">p-value</div>
+        <div class="kpi-value">0.54</div>
+        <div class="kpi-sub">Null effect, not statistically significant</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Daily Trips: CBD-Bound vs Manhattan Control</h2>
+      <div id="chart-timeseries" style="height: 380px;"></div>
+      <p class="small">Red dashed line marks Jan 5, 2025 — date the Central Business District congestion toll took effect. Visually, both series move together before and after, consistent with the null DiD finding.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>7-Day Rolling % Difference (Treated − Control)</h2>
+        <div id="chart-diff" style="height: 320px;"></div>
+        <p class="small">Smoothed percentage gap. No persistent shift after the toll start date.</p>
+      </div>
+      <div class="card">
+        <h2>Average Fare by Group</h2>
+        <div id="chart-fare" style="height: 320px;"></div>
+        <p class="small">Mean fare per metered trip. The added $0.74 CBD fee post-Jan-5-2025 is too small to move demand visibly.</p>
+      </div>
+    </div>
+
+    <div class="methodology">
+      <div>
+        <h3>Treatment Group</h3>
+        <p>Yellow / green taxi trips with pickup or dropoff inside the Central Business District (south of 60th St, Manhattan).</p>
+      </div>
+      <div>
+        <h3>Control Group</h3>
+        <p>Trips entirely within Upper Manhattan, outside the CBD zone. Used to control for citywide trends.</p>
+      </div>
+      <div>
+        <h3>Method</h3>
+        <p>Difference-in-differences regression with day-of-week and month fixed effects, clustered standard errors. DuckDB + statsmodels on 95M+ TLC records.</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  Data: <a href="https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page" target="_blank">NYC Taxi & Limousine Commission</a>
+  &nbsp;|&nbsp;
+  Code & methodology: <a href="https://github.com/atharvajoshi01/nyc-tlc-congestion-pricing-causal-study" target="_blank">GitHub repo</a>
+  &nbsp;|&nbsp;
+  By <a href="https://github.com/atharvajoshi01" target="_blank">Atharva Joshi</a>
+</footer>
+
+<script>
+const CSV_URL = 'tableau_export.csv';
+const TOLL_DATE = '2025-01-05';
+const COLOR_TREAT = '#1F4E79';
+const COLOR_CONTROL = '#808080';
+const COLOR_ACCENT = '#E63946';
+
+Papa.parse(CSV_URL, {
+  download: true,
+  header: true,
+  dynamicTyping: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    const rows = results.data.filter(r => r.trip_date && r.group);
+    renderDashboard(rows);
+  },
+  error: function(err) {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:#c00">Could not load tableau_export.csv. Make sure it lives in the same folder as index.html.</div>';
+  }
+});
+
+function renderDashboard(rows) {
+  // Separate by group
+  const treat = rows.filter(r => r.group.indexOf('treated') !== -1);
+  const control = rows.filter(r => r.group.indexOf('control') !== -1);
+
+  treat.sort((a,b) => a.trip_date.localeCompare(b.trip_date));
+  control.sort((a,b) => a.trip_date.localeCompare(b.trip_date));
+
+  // Total trips KPI
+  const totalTrips = rows.reduce((s, r) => s + (r.trips || 0), 0);
+  document.getElementById('kpi-trips').textContent = formatBig(totalTrips);
+
+  // Time series chart
+  const tsTraces = [
+    {
+      x: treat.map(r => r.trip_date),
+      y: treat.map(r => r.trips),
+      type: 'scatter', mode: 'lines',
+      name: 'CBD-bound (treated)',
+      line: { color: COLOR_TREAT, width: 1.6 }
+    },
+    {
+      x: control.map(r => r.trip_date),
+      y: control.map(r => r.trips),
+      type: 'scatter', mode: 'lines',
+      name: 'Manhattan control',
+      line: { color: COLOR_CONTROL, width: 1.6 }
+    }
+  ];
+  Plotly.newPlot('chart-timeseries', tsTraces, {
+    margin: { t: 10, r: 20, b: 40, l: 60 },
+    xaxis: { title: '', showgrid: false },
+    yaxis: { title: 'Daily trips', gridcolor: '#EEE' },
+    shapes: [{
+      type: 'line', x0: TOLL_DATE, x1: TOLL_DATE, y0: 0, y1: 1, yref: 'paper',
+      line: { color: COLOR_ACCENT, width: 2, dash: 'dash' }
+    }],
+    annotations: [{
+      x: TOLL_DATE, y: 1, yref: 'paper',
+      text: 'Toll start', showarrow: false,
+      xanchor: 'left', yanchor: 'bottom', font: { color: COLOR_ACCENT, size: 12 }
+    }],
+    legend: { orientation: 'h', y: -0.18 },
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+  }, { displayModeBar: false, responsive: true });
+
+  // Rolling % difference chart
+  const dateMap = {};
+  treat.forEach(r => { dateMap[r.trip_date] = dateMap[r.trip_date] || {}; dateMap[r.trip_date].t = r.trips; });
+  control.forEach(r => { dateMap[r.trip_date] = dateMap[r.trip_date] || {}; dateMap[r.trip_date].c = r.trips; });
+  const dates = Object.keys(dateMap).sort();
+  const rawDiff = dates.map(d => {
+    const o = dateMap[d];
+    return (o.t && o.c) ? ((o.t - o.c) / o.c) * 100 : null;
+  });
+  const rolling = rollingMean(rawDiff, 7);
+  Plotly.newPlot('chart-diff', [{
+    x: dates, y: rolling, type: 'scatter', mode: 'lines',
+    line: { color: COLOR_TREAT, width: 1.8 }, name: '7-day rolling % diff'
+  }], {
+    margin: { t: 10, r: 20, b: 40, l: 60 },
+    xaxis: { showgrid: false },
+    yaxis: { title: '% difference', gridcolor: '#EEE', zeroline: true, zerolinecolor: '#CCC' },
+    shapes: [{
+      type: 'line', x0: TOLL_DATE, x1: TOLL_DATE, y0: 0, y1: 1, yref: 'paper',
+      line: { color: COLOR_ACCENT, width: 2, dash: 'dash' }
+    }],
+    showlegend: false,
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+  }, { displayModeBar: false, responsive: true });
+
+  // Average fare chart
+  Plotly.newPlot('chart-fare', [
+    {
+      x: treat.map(r => r.trip_date), y: treat.map(r => r.avg_fare),
+      type: 'scatter', mode: 'lines',
+      name: 'CBD-bound (treated)', line: { color: COLOR_TREAT, width: 1.2 }
+    },
+    {
+      x: control.map(r => r.trip_date), y: control.map(r => r.avg_fare),
+      type: 'scatter', mode: 'lines',
+      name: 'Manhattan control', line: { color: COLOR_CONTROL, width: 1.2 }
+    }
+  ], {
+    margin: { t: 10, r: 20, b: 40, l: 60 },
+    xaxis: { showgrid: false },
+    yaxis: { title: 'Avg fare ($)', gridcolor: '#EEE' },
+    shapes: [{
+      type: 'line', x0: TOLL_DATE, x1: TOLL_DATE, y0: 0, y1: 1, yref: 'paper',
+      line: { color: COLOR_ACCENT, width: 2, dash: 'dash' }
+    }],
+    legend: { orientation: 'h', y: -0.22 },
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+  }, { displayModeBar: false, responsive: true });
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+function rollingMean(arr, win) {
+  const out = new Array(arr.length).fill(null);
+  for (let i = win - 1; i < arr.length; i++) {
+    let sum = 0, cnt = 0;
+    for (let j = i - win + 1; j <= i; j++) {
+      if (arr[j] !== null && arr[j] !== undefined && !isNaN(arr[j])) { sum += arr[j]; cnt++; }
+    }
+    if (cnt > 0) out[i] = sum / cnt;
+  }
+  return out;
+}
+
+function formatBig(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+  return String(n);
+}
+</script>
+
+</body>
+</html>
